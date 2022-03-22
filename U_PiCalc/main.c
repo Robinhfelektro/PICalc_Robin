@@ -2,7 +2,7 @@
  * U_PiCalc_FS2022
  *
  * Created: 20.03.2018 18:32:07
- * Author : -
+ * Author : Robin bühler
  */ 
 
 #include <math.h>
@@ -30,10 +30,12 @@
 
 #include "ButtonHandler.h"
 
-
-
-
 void controllerTask(void* pvParameters);
+void leibnizTask(void* pvParameters);
+
+
+float pi4 = 1;
+float pi = 0;  
 
 int main(void)
 {
@@ -41,18 +43,53 @@ int main(void)
 	vInitDisplay();
 	
 	xTaskCreate( controllerTask, (const char *) "control_tsk", configMINIMAL_STACK_SIZE+150, NULL, 3, NULL);
+	xTaskCreate( leibnizTask, (const char *) "leibniz_tsk", configMINIMAL_STACK_SIZE+150, NULL, 1, NULL);
 
 	vDisplayClear();
 	vDisplayWriteStringAtPos(0,0,"PI-Calc FS2022");
-	
 	vTaskStartScheduler();
 	return 0;
 }
 
+void leibnizTask(void* pvParameters) {
+
+	uint32_t counter = 3; 
+	
+	while(1)
+	{
+		pi4 = pi4 - (1.0 / counter);  //1.0 damit als float erkannt int counter
+		counter += 2; 
+		pi4 = pi4 + (1. / counter);
+		counter += 2; 
+		pi = pi4 * 4; 
+	}
+	
+}
+
+
+
 void controllerTask(void* pvParameters) {
 	initButtons();
+	uint8_t counter_500ms = 0; 
+	
 	for(;;) {
 		updateButtons();
+		
+		if (counter_500ms == 0)        //ausgabe alle 500 ms, 50 * 10ms
+		{
+			vDisplayClear();
+			counter_500ms = 50; 
+			char pistring[12];
+			//sprintf(&pistring[0], "PI: %.8f", M_PI);
+			sprintf(&pistring[0], "PI: %.8f", pi);
+			vDisplayWriteStringAtPos(1,0, "%s", pistring);
+		}
+		else
+		{
+			counter_500ms--; 
+		}
+		
+		
 		if(getButtonPress(BUTTON1) == SHORT_PRESSED) {
 			char pistring[12];
 			sprintf(&pistring[0], "PI: %.8f", M_PI);
@@ -79,6 +116,6 @@ void controllerTask(void* pvParameters) {
 		if(getButtonPress(BUTTON4) == LONG_PRESSED) {
 			
 		}
-		vTaskDelay(10/portTICK_RATE_MS);
+		vTaskDelay(10/portTICK_RATE_MS);  //vtast delay until für genauere Zeit?
 	}
 }
