@@ -55,7 +55,7 @@ int main(void)
 	
 	xTaskCreate( vControllerTask,	(const char *) "control_tsk", configMINIMAL_STACK_SIZE+150, NULL, 3, NULL);
 	xTaskCreate( vLeibnizTask,		(const char *) "leibniz_tsk", configMINIMAL_STACK_SIZE+150, NULL, 1, NULL);
-	xTaskCreate( vChudnovskyTask,	(const char *) "chudnovsky_tsk", configMINIMAL_STACK_SIZE+150, NULL, 1, NULL);
+	xTaskCreate( vChudnovskyTask,	(const char *) "chudnovsky_tsk", configMINIMAL_STACK_SIZE+150, NULL, 2, NULL);
 	
 	
 	
@@ -86,44 +86,59 @@ void vChudnovskyTask(void* pvParameters)
 	uint32_t count_pi = 0; 
 	
 	
-	uint64_t A = f_sd(13591409);
-	uint64_t B = f_sd(545140134);
-	uint64_t C = f_sd(640320);
-	uint64_t D = f_sd(426880);
-	uint64_t E = f_sd(10005);
+	uint64_t A = 13591409;
+	uint64_t B = 545140134;
+	float64_t C = f_sd(640320);
+	
+	uint64_t D = 426880;
+	uint64_t E = 10005;
 	
 	
 	
 	uint64_t Zaehler = 0; 
 	uint64_t Nenner = 0; 
 	
+	float64_t f_Zaehler = f_sd(0); 
+	float64_t f_Nenner  = f_sd(0);
+	float64_t f_help_var1 = f_sd(0);
+	float64_t f_help_var2 = f_sd(10);
+	float64_t f_help_var3 = f_sd(10);
+	
+	float64_t Chudnov_Sum = f_sd(0); 
+	float64_t Chudnov_PI = f_sd(0); 
+	
+	uint64_t fak = 0;
+	uint64_t fak2 = 0;
+	float64_t fak3 = 0;
+	fak = (rCalcFakultaet(3 * count_pi));
+	fak2 = ( pow(rCalcFakultaet(count_pi), 3));
+	//fak3 = f_pow(1.1, 2.2);
+	fak3 = pow(1.1, 2.2);
+	
+	
 	while(1)
 	{
-		Zaehler = (f_pow(-1, count_pi)) * (rCalcFakultaet(6 * count_pi)) * (B * count_pi + A)  //in 64 bi pappen float
+		Zaehler = (pow(-1, count_pi)) * (rCalcFakultaet(6 * count_pi)) * (B * count_pi + A);  //
+		
+		
+		//f_help_var1 = f_pow(C, f_help_var2);
+		//f_help_var1 = (f_exp(f_mult((y), f_log(x))))
+		//f_help_var1 = (f_exp(f_mult((f_help_var2), f_log(f_help_var3))));
+		
+		Nenner	= (rCalcFakultaet(3 * count_pi)) * ( pow(rCalcFakultaet(count_pi), 3)) * ( pow (C, 3* count_pi + 3 / 2  )); //C bereits als ein float?
+		f_Zaehler = f_sd(Zaehler);
+		f_Nenner = f_sd(Nenner); 
+		Chudnov_Sum = f_Nenner / f_Zaehler; 
+		Chudnov_PI = 1 / (12 * Chudnov_Sum);
 		
 		count_pi++; 
 		
+		char pistring2[12];
+		sprintf(&pistring2[0], "PI_C: %.8f", Chudnov_PI);
+		vDisplayWriteStringAtPos(3,0, "%s", pistring2);
+		
 	}
 	/*
-	
-	 // Constants
-	 DIGITS = 100;
-	 A      = 13591409;
-	 B      = 545140134;
-	 C      = 640320;
-	 D      = 426880;
-	 E      = 10005;
-	 DIGITS_PER_TERM = 14.1816474627254776555;  // = log(53360^3) / log(10)
-	 C3_24  = C * C * C / 24;
-	 N      = DIGITS / DIGITS_PER_TERM;
-	 PREC   = DIGITS * log2(10);
-	
-	
-	
-	
-	
-	
-	
 	 pi_chud+=(((Decimal(-1))**k ) * (Decimal(mp.factorial(6*k)))*(13591409 + 545140134*k))/Decimal((mp.factorial(3*k)*((mp.factorial(k))**3)*(640320**((3*k)+(Decimal(1.5))))))
 	 k+=1
 	 pi_chud = (Decimal(pi_chud) * 12)
@@ -147,9 +162,9 @@ void vLeibnizTask(void* pvParameters) {
 	
 	while(1)
 	{
-		xEventGroupSetBits(egPI_Calc, egPI_CALCULATE_PROGRESS);		//calculate Flag
+		//xEventGroupSetBits(egPI_Calc, egPI_CALCULATE_PROGRESS);		//calculate Flag
 		
-		xEventGroupWaitBits(egPI_Calc, egPI_WRITE_DISPLAY, pdTRUE, pdFALSE, portMAX_DELAY);  //wait for calculate enable?
+		//xEventGroupWaitBits(egPI_Calc, egPI_WRITE_DISPLAY, pdTRUE, pdFALSE, portMAX_DELAY);  //wait for calculate enable?
 		
 		pi4 = pi4 - (1.0 / counter);  //1.0 damit als float erkannt int counter
 		counter += 2; 
@@ -159,8 +174,10 @@ void vLeibnizTask(void* pvParameters) {
 		
 		if (pi >= 3.14)
 		{
-			xEventGroupSetBits(egPI_Calc, egPI_CALCULATE_DONE);		//pi calculated
+			//xEventGroupSetBits(egPI_Calc, egPI_CALCULATE_DONE);		//pi calculated
 		}
+		
+		
 	}
 	
 }
@@ -176,15 +193,15 @@ void vControllerTask(void* pvParameters) {
 		
 		if (counter_500ms == 0)        //ausgabe alle 500 ms, 50 * 10ms
 		{
-			xEventGroupWaitBits(egPI_Calc, egPI_CALCULATE_DONE, pdTRUE, pdFALSE, portMAX_DELAY);  //wait for finished pi calculation
-			xEventGroupClearBits(egPI_Calc, egPI_WRITE_DISPLAY);   //block calculating pi?
+			//xEventGroupWaitBits(egPI_Calc, egPI_CALCULATE_DONE, pdTRUE, pdFALSE, portMAX_DELAY);  //wait for finished pi calculation
+			//xEventGroupClearBits(egPI_Calc, egPI_WRITE_DISPLAY);   //block calculating pi?
 			vDisplayClear();
 			counter_500ms = 50; 
 			char pistring[12];
 			//sprintf(&pistring[0], "PI: %.8f", M_PI);
 			sprintf(&pistring[0], "PI: %.8f", pi);
 			vDisplayWriteStringAtPos(1,0, "%s", pistring);
-			xEventGroupSetBits(egPI_Calc, egPI_WRITE_DISPLAY);			//enable calculating pi?
+			//xEventGroupSetBits(egPI_Calc, egPI_WRITE_DISPLAY);			//enable calculating pi?
 		}
 		else
 		{
