@@ -81,8 +81,6 @@ uint64_t rCalcFakultaet(uint64_t n)
 
 void vChudnovskyTask(void* pvParameters)
 {
-	float64_t testvar1 = f_sd(2);									//Erstellen einer Double-Variable, Initialisiert mit dem Wert 2
-	float64_t testvar2 = f_sd(12);
 	uint32_t count_pi = 0; 
 	
 	
@@ -99,43 +97,46 @@ void vChudnovskyTask(void* pvParameters)
 	uint64_t Nenner = 0; 
 	
 	float64_t f_Zaehler = f_sd(0); 
-	float64_t f_Nenner  = f_sd(0);
 	float64_t f_help_var1 = f_sd(0);
-	float64_t f_help_var2 = f_sd(10);
-	float64_t f_help_var3 = f_sd(10);
+	float64_t f_Nenner_power = f_sd(0);
+	float64_t f_Nenner_sum = f_sd(0);
 	
 	float64_t Chudnov_Sum = f_sd(0); 
 	float64_t Chudnov_PI = f_sd(0); 
 	
-	uint64_t fak = 0;
-	uint64_t fak2 = 0;
-	float64_t fak3 = 0;
-	fak = (rCalcFakultaet(3 * count_pi));
-	fak2 = ( pow(rCalcFakultaet(count_pi), 3));
-	//fak3 = f_pow(1.1, 2.2);
-	fak3 = pow(1.1, 2.2);
-	
+	uint64_t Nenner_help_multi = 0; 
+	float64_t f_Nenner_help_multi = f_sd(0);
+	char resultstring1[20];
 	
 	while(1)
 	{
 		Zaehler = (pow(-1, count_pi)) * (rCalcFakultaet(6 * count_pi)) * (B * count_pi + A);  //
+		f_Nenner_power = f_pow(C, (3 * count_pi + (3 / 2)) );
+		Nenner_help_multi = (rCalcFakultaet(3 * count_pi)) * ( pow(rCalcFakultaet(count_pi), 3));
+		f_Nenner_help_multi = f_sd(Nenner_help_multi); 
+		f_Nenner_sum = f_mult(f_Nenner_help_multi, f_Nenner_power);
 		
 		
-		//f_help_var1 = f_pow(C, f_help_var2);
-		//f_help_var1 = (f_exp(f_mult((y), f_log(x))))
-		//f_help_var1 = (f_exp(f_mult((f_help_var2), f_log(f_help_var3))));
-		
-		Nenner	= (rCalcFakultaet(3 * count_pi)) * ( pow(rCalcFakultaet(count_pi), 3)) * ( pow (C, 3* count_pi + 3 / 2  )); //C bereits als ein float?
 		f_Zaehler = f_sd(Zaehler);
-		f_Nenner = f_sd(Nenner); 
-		Chudnov_Sum = f_Nenner / f_Zaehler; 
+		Chudnov_Sum = f_div(f_Zaehler, f_Nenner_sum); 
+		
 		Chudnov_PI = 1 / (12 * Chudnov_Sum);
 		
 		count_pi++; 
 		
+		
+		
+		char* tempResultString = f_to_string(Chudnov_Sum, 16, 16);		//Verwandeln einer Double-Variable in einen String
+		sprintf(resultstring1, "1: %s", tempResultString);			//Einsetzen des Strings in einen anderen String
+		vDisplayClear();											//Löschen des ganzen Displays
+		vDisplayWriteStringAtPos(0,0,"Float64 Test");				//Ausgabe auf das Display
+		vDisplayWriteStringAtPos(1,0,"%s", resultstring1);
+		vDisplayWriteStringAtPos(3,0,"2 as float: %f", f_ds(Chudnov_PI));
+		
 		char pistring2[12];
 		sprintf(&pistring2[0], "PI_C: %.8f", Chudnov_PI);
 		vDisplayWriteStringAtPos(3,0, "%s", pistring2);
+		vTaskDelay(400 / portTICK_RATE_MS);
 		
 	}
 	/*

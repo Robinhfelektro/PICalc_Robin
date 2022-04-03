@@ -69,8 +69,8 @@
 // *********************************************************************** //
 
 //#define F_WITH_sqrt
-//#define F_WITH_exp
-//#define F_WITH_log
+#define F_WITH_exp
+#define F_WITH_log
 //#define F_WITH_sin
 //#define F_WITH_cos
 //#define F_WITH_tan
