@@ -59,7 +59,7 @@ int main(void)
 	xTaskCreate( vControllerTask,	(const char *) "control_tsk", configMINIMAL_STACK_SIZE+150, NULL, 3, NULL);
 	xTaskCreate( vLeibnizTask,		(const char *) "leibniz_tsk", configMINIMAL_STACK_SIZE+159, NULL, 1, NULL);
 	xTaskCreate( testtask,		(const char *) "testtask", configMINIMAL_STACK_SIZE+150, NULL, 1, NULL);
-	xTaskCreate( vChudnovskyTask,	(const char *) "ky_tsk", configMINIMAL_STACK_SIZE+500, NULL, 2, NULL);
+	xTaskCreate( vChudnovskyTask,	(const char *) "ky_tsk", configMINIMAL_STACK_SIZE+1500, NULL, 2, NULL);
 	xTaskCreate( Anzeige, (const char *) "Anzeige", configMINIMAL_STACK_SIZE+500, NULL, 2, NULL);
 	
 	
@@ -100,40 +100,57 @@ void vChudnovskyTask(void* pvParameters)
 	
 	
 	
-	uint32_t count_pi = 0;  //summenzähler
-	uint64_t Zaehler = 0; 
+	uint32_t count_pi = 1;  //summenzähler
+/*	uint64_t Zaehler = 0; */
 	
-	uint64_t A = 13591409;
-	uint64_t B = 545140134;
+// 	uint64_t A = 13591409;
+// 	uint64_t B = 545140134;
+// 	float64_t f_Chudnov_Calculate; 
+// 	float64_t f_chud_help1; 
+// 	float64_t f_chud_help2; 
+
+	float64_t f_chud_helpA; 
+	float64_t f_chud_helpB; 
+	float64_t f_Zahler = f_sd( 426880 * f_pow( f_sd(10005), f_sd(0.5))) ; 
 	
+//	float32_t f_sd_testvar; 
+
 
 	
 	while(1)
 	{
+		if(count_pi >= 2) 
+		{
+			while(1)
+			{
+				vTaskDelay(100/portTICK_RATE_MS);
+			}
+		}
 		
-		Zaehler = (pow(-1, count_pi)) * (rCalcFakultaet(6 * count_pi)) * (B * count_pi + A);  //zahl wird schnell sehr gross
-		f_Chudnov_PI = (f_sd(Zaehler)) /     f_mult( f_pow( f_sd(640320) , (3 * count_pi + (3 / 2))) , f_sd(pow(rCalcFakultaet(count_pi), 3) * ( rCalcFakultaet(3*count_pi )))   );
-		count_pi++; 
+		//Zaehler = (pow(-1, count_pi)) * (rCalcFakultaet(6 * count_pi)) * (B * count_pi + A);  //zahl wird schnell sehr gross
+		//f_Chudnov_Calculate =  f_div( (f_sd(Zaehler)) , f_mult( f_pow( f_sd(640320) , (3 * count_pi + (3 / 2))) , f_sd( pow(rCalcFakultaet(count_pi), 3) * ( rCalcFakultaet(3*count_pi )))) );
+		//
+		//f_Chudnov_PI =  f_add( f_div( f_sd(1), f_Chudnov_Calculate), f_Chudnov_PI )  ;
+		//f_Chudnov_PI =  f_add( f_div( f_sd(1), f_Chudnov_Calculate), f_Chudnov_PI )  ;
+		//f_Chudnov_PI =  f_add(   f_div( f_sd(1) , f_mult( f_sd(12), f_Chudnov_Calculate)) , f_Chudnov_PI );    
+		//f_Chudnov_PI =  f_add(   f_div( f_sd(1) , f_mult( f_sd(12), f_Chudnov_Calculate)) , f_Chudnov_PI );   
+		
+		 
+		//f_chud_help1 =      f_sd( pow( -1, count_pi) *  rCalcFakultaet(6 * count_pi));   //nenner und zähler mit tr und k = 1 überprüft, stimmt   
+		//f_chud_help2 = f_sd(  rCalcFakultaet(3 * count_pi) * rCalcFakultaet(count_pi) * pow(640320, (3 * count_pi)) );
+		
+ 		f_chud_helpA = f_div( f_sd( pow( -1, count_pi) *  rCalcFakultaet(6 * count_pi)), f_sd(  rCalcFakultaet(3 * count_pi) * rCalcFakultaet(count_pi) * pow(640320, (3 * count_pi))) );
+ 		f_chud_helpB = f_mult( f_sd(count_pi) , f_chud_helpA);
+ 		
+ 		f_Chudnov_PI = f_div( f_Zahler  ,  (   f_add( f_mult(f_sd(13591409), f_chud_helpA )  ,   f_mult( f_sd(545140134) , f_chud_helpB)) )    );
+		
+		//count_pi++; 
+		
 		vTaskDelay(100/portTICK_RATE_MS);
 	
 		
 	}
-	/*
-	 pi_chud+=(((Decimal(-1))**k ) * (Decimal(mp.factorial(6*k)))*(13591409 + 545140134*k))/Decimal((mp.factorial(3*k)*((mp.factorial(k))**3)*(640320**((3*k)+(Decimal(1.5))))))
-	 k+=1
-	 pi_chud = (Decimal(pi_chud) * 12)
-	 pi_chud = (Decimal(pi_chud**(-1)))
-	 return int(pi_chud*10**n)
-	 exact_pi_val = str(31415926535897932384626433832795028841971693993751058209749445923078164062862089986280348253421170679821480865132823066470938446095505822317253594081284811174502841027019385211055596446229489549303819644288109756659334461284756482337867831652712019091456485669234603486104543266482133936072602491412737245870066063155881748815209209628292540917153643678925903600113305305488204665213841469519415116094330572703657595919530921861173819326117931051185480744623799627495673518857527248912279381830119491298336733624406566430860213949463952247371907021798609437027705392171762931767523846748184676694051320005681271452635608277857713427577896091736371787214684409012249534301465495853710507922796892589235420199561121290219608640344181598136297747713099605187072113499999983729780499510597317328160963185950244594553469083026425223082533446850352619311881710100031378387528865875332083814206171776691473035982534904287554687311595628638823537875937519577818577805321712268066130019278766111959092164201989)
-	 for n in range(1,1000):
-	 print(int(exact_pi_val[:n+1]))
-	 print(pi_chudn(n))
-	 is_true = (pi_chudn(n) == int(exact_pi_val[:n+1]))
-	 print("for n = ",n, " It is ",is_true)
-	 if is_true == False:
-	 break
-	
-	*/
+
 }
 
 void vLeibnizTask(void* pvParameters) {
@@ -165,7 +182,7 @@ void vLeibnizTask(void* pvParameters) {
 void Anzeige(void* pvParameters) 
 {
 	
-	f_Chudnov_PI = f_sd(0.99999);
+	//f_Chudnov_PI = f_sd(0.99999);
 	//char chundnov_result_sting[20];
 	
 	float64_t testvar1 = f_sd(2);									//Erstellen einer Double-Variable, Initialisiert mit dem Wert 2
@@ -189,8 +206,7 @@ void Anzeige(void* pvParameters)
 		//float 64
 		char* tempResultString = f_to_string(f_Chudnov_PI, 16, 16);		//Verwandeln einer Double-Variable in einen String
 		sprintf(s_result_chudnov, "1: %s", tempResultString);			//Einsetzen des Strings in einen anderen String
-		vDisplayWriteStringAtPos(2,0,"%s", s_result_chudnov);
-		vDisplayWriteStringAtPos(3,0,"2 as float: %f", f_ds(f_Chudnov_PI));
+		vDisplayWriteStringAtPos(2,0,"%s", s_result_chudnov);;		vDisplayWriteStringAtPos(3,0,"2 as float: %f", f_ds(f_Chudnov_PI));
 		
 		
 		vTaskDelay(400 / portTICK_RATE_MS);
