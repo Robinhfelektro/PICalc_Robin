@@ -35,18 +35,49 @@
 void vControllerTask(void* pvParameters);
 void vLeibnizTask(void* pvParameters);
 void vChudnovskyTask(void* pvParameters);
-void testtask(void* pvParameters);
+void vEuler_PI(void* pvParameters);
 void Anzeige(void* pvParameters);
 
 
-#define egPI_CALCULATE_PROGRESS		1	<< 0
-#define egPI_CALCULATE_DONE			1	<< 1
-#define egPI_WRITE_DISPLAY			1	<< 2
+
 
 EventGroupHandle_t egPI_Calc;
 
-float pi4 = 1;
-float pi = 0;  
+
+#define	TASK_CHUDNOVSKY				1 << 0	
+#define TASK_LEIBNITZ				1 << 1		
+#define TASK_EULER					1 << 2		 //https://3.141592653589793238462643383279502884197169399375105820974944592.eu/pi-berechnen-formeln-und-algorithmen/
+	
+#define DATA_READ_REQUEST_LOCK		1 << 3
+#define DATA_CALCULATION_READY		1 << 4
+#define DATA_READ_LOCK_CLEARED		1 << 5
+
+#define RESET_PI					1 << 6
+
+
+
+
+//#define egPI_CALCULATE_PROGRESS		1	<< 0
+//#define egPI_CALCULATE_DONE			1	<< 1
+//#define egPI_WRITE_DISPLAY			1	<< 2
+
+//#define LOCK_DATA	 1 << 0
+//#define DATA_READY	 1 << 1
+//#define LOCK_CLEARED 1 << 2
+//#define LED1ENABLE	 1 << 3
+//#define LED2ENABLE	 1 << 4
+//#define RESET1		 1 << 5
+//#define RESET2		 1 << 6
+//#define ALGO1		 1 << 8
+//#define ALGO2		 1 << 9
+
+
+
+
+
+float32_t pi4 = 1;
+float32_t Leib_PI = 0;  
+float32_t g_Euler_PI = 0; 
 float64_t f_Chudnov_PI;
 
 int main(void)
@@ -55,12 +86,13 @@ int main(void)
 	vInitDisplay();
 	
 	egPI_Calc = xEventGroupCreate();
+	xEventGroupSetBits(egPI_Calc, TASK_LEIBNITZ);			//temporär task enable
 	
-	xTaskCreate( vControllerTask,	(const char *) "control_tsk", configMINIMAL_STACK_SIZE+150, NULL, 3, NULL);
-	xTaskCreate( vLeibnizTask,		(const char *) "leibniz_tsk", configMINIMAL_STACK_SIZE+159, NULL, 1, NULL);
-	xTaskCreate( testtask,		(const char *) "testtask", configMINIMAL_STACK_SIZE+150, NULL, 1, NULL);
-	xTaskCreate( vChudnovskyTask,	(const char *) "ky_tsk", configMINIMAL_STACK_SIZE+1500, NULL, 2, NULL);
-	xTaskCreate( Anzeige, (const char *) "Anzeige", configMINIMAL_STACK_SIZE+500, NULL, 2, NULL);
+	xTaskCreate( vControllerTask,	(const char *) "control_tsk",	configMINIMAL_STACK_SIZE+150, NULL, 3, NULL);
+	xTaskCreate( vLeibnizTask,		(const char *) "leibniz_tsk",	configMINIMAL_STACK_SIZE+150, NULL, 1, NULL);
+	xTaskCreate( vEuler_PI,			(const char *) "Euler_PI_tsk",	configMINIMAL_STACK_SIZE+150, NULL, 1, NULL);
+	xTaskCreate( vChudnovskyTask,	(const char *) "Chud_PI_tsk",	configMINIMAL_STACK_SIZE+1000, NULL, 2, NULL);
+	xTaskCreate( Anzeige,			(const char *) "Anzeige_tsk",	configMINIMAL_STACK_SIZE+1000, NULL, 2, NULL);
 	
 	
 	
@@ -86,20 +118,28 @@ uint64_t rCalcFakultaet(uint64_t n)
 
 
 
-void testtask(void* pvParameters)  {
-	uint8_t x = 0;
-	for(;;) {
-		x++;
-		vTaskDelay(10/portTICK_RATE_MS);
+void vEuler_PI(void* pvParameters)  {
+	uint32_t counter = 1; 
+	float32_t  lokal_euler_pi;
+	float32_t  euler_pi_calc;
+	
+	for(;;) 
+	{
+		euler_pi_calc = euler_pi_calc + ( 1.0 / pow(counter, 2) );
+		
+		lokal_euler_pi = sqrt( (euler_pi_calc * 6.0 ) );
+		
+		g_Euler_PI = lokal_euler_pi; 
+		counter++;
+		
+		
+		
+		vTaskDelay(1/portTICK_RATE_MS);
 	}
 }
 
 void vChudnovskyTask(void* pvParameters)
 {
-	
-	
-	
-	
 	uint32_t count_pi = 1;  //summenzähler
 /*	uint64_t Zaehler = 0; */
 	
@@ -109,14 +149,14 @@ void vChudnovskyTask(void* pvParameters)
 // 	float64_t f_chud_help1; 
 // 	float64_t f_chud_help2; 
 
-	float64_t f_chud_helpA; 
-	float64_t f_chud_helpB; 
-	float64_t f_Zahler = f_sd( 426880 * f_pow( f_sd(10005), f_sd(0.5))) ; 
+	float64_t f_chud_helpA;
+	float64_t f_chud_helpB;
+	float64_t f_Zahler = f_mult( f_sd(426880) , f_pow( f_sd(10005), f_sd(0.5)) );
+	
+	
 	
 //	float32_t f_sd_testvar; 
 
-
-	
 	while(1)
 	{
 		if(count_pi >= 2) 
@@ -134,17 +174,19 @@ void vChudnovskyTask(void* pvParameters)
 		//f_Chudnov_PI =  f_add( f_div( f_sd(1), f_Chudnov_Calculate), f_Chudnov_PI )  ;
 		//f_Chudnov_PI =  f_add(   f_div( f_sd(1) , f_mult( f_sd(12), f_Chudnov_Calculate)) , f_Chudnov_PI );    
 		//f_Chudnov_PI =  f_add(   f_div( f_sd(1) , f_mult( f_sd(12), f_Chudnov_Calculate)) , f_Chudnov_PI );   
-		
-		 
 		//f_chud_help1 =      f_sd( pow( -1, count_pi) *  rCalcFakultaet(6 * count_pi));   //nenner und zähler mit tr und k = 1 überprüft, stimmt   
 		//f_chud_help2 = f_sd(  rCalcFakultaet(3 * count_pi) * rCalcFakultaet(count_pi) * pow(640320, (3 * count_pi)) );
 		
- 		f_chud_helpA = f_div( f_sd( pow( -1, count_pi) *  rCalcFakultaet(6 * count_pi)), f_sd(  rCalcFakultaet(3 * count_pi) * rCalcFakultaet(count_pi) * pow(640320, (3 * count_pi))) );
- 		f_chud_helpB = f_mult( f_sd(count_pi) , f_chud_helpA);
- 		
- 		f_Chudnov_PI = f_div( f_Zahler  ,  (   f_add( f_mult(f_sd(13591409), f_chud_helpA )  ,   f_mult( f_sd(545140134) , f_chud_helpB)) )    );
 		
-		//count_pi++; 
+		//zweite berechnung
+		 
+ 		//f_chud_helpA = f_div( f_sd(  pow( -1, count_pi) *  rCalcFakultaet(6 * count_pi)), f_sd(  rCalcFakultaet(3 * count_pi) * rCalcFakultaet(count_pi) * pow(640320, (3 * count_pi))) );
+ 		//f_chud_helpB = f_mult( f_sd(count_pi) , f_chud_helpA);
+		//f_Chudnov_PI = f_chud_helpB;
+ 		
+ 		//f_Chudnov_PI = f_div(   f_Zahler  ,  (   f_add( f_mult(f_sd(13591409), f_chud_helpA )  ,   f_mult( f_sd(545140134) , f_chud_helpB)) )    ); //dividend ist sehr hoch 
+		
+		count_pi++; 
 		
 		vTaskDelay(100/portTICK_RATE_MS);
 	
@@ -156,25 +198,33 @@ void vChudnovskyTask(void* pvParameters)
 void vLeibnizTask(void* pvParameters) {
 
 	uint32_t counter = 3; 
+	float32_t  lokal_leib_pi;
 	
 	while(1)
 	{
-		//xEventGroupSetBits(egPI_Calc, egPI_CALCULATE_PROGRESS);		//calculate Flag
-		
-		//xEventGroupWaitBits(egPI_Calc, egPI_WRITE_DISPLAY, pdTRUE, pdFALSE, portMAX_DELAY);  //wait for calculate enable?
-		
-		pi4 = pi4 - (1.0 / counter);  //1.0 damit als float erkannt int counter
-		counter += 2; 
-		pi4 = pi4 + (1. / counter);
-		counter += 2; 
-		pi = pi4 * 4; 
-		
-		if (pi >= 3.14)
+		//task auswahl
+		if ( (xEventGroupGetBits(egPI_Calc) & TASK_LEIBNITZ) == TASK_LEIBNITZ)  //task enable
 		{
-			//xEventGroupSetBits(egPI_Calc, egPI_CALCULATE_DONE);		//pi calculated
+			if ( (xEventGroupGetBits(egPI_Calc) & RESET_PI ) == RESET_PI)			//reset
+			{
+				xEventGroupClearBits(egPI_Calc, RESET_PI);
+				lokal_leib_pi = 0; 
+			}
+			
+			pi4 = pi4 - (1.0 / counter);  //1.0 damit als float erkannt int counter
+			counter += 2;
+			pi4 = pi4 + (1. / counter);
+			counter += 2;
+			Leib_PI = pi4 * 4;
+			
+			
+			if ( (xEventGroupGetBits(egPI_Calc) & DATA_READ_REQUEST_LOCK) == DATA_READ_REQUEST_LOCK)
+			{
+				xEventGroupSetBits(egPI_Calc, DATA_CALCULATION_READY);
+				xEventGroupWaitBits(egPI_Calc, DATA_READ_LOCK_CLEARED, pdTRUE, pdFALSE, portTICK_RATE_MS);
+			}
+			Leib_PI = lokal_leib_pi;	
 		}
-		
-		
 	}
 	
 }
@@ -185,31 +235,47 @@ void Anzeige(void* pvParameters)
 	//f_Chudnov_PI = f_sd(0.99999);
 	//char chundnov_result_sting[20];
 	
-	float64_t testvar1 = f_sd(2);									//Erstellen einer Double-Variable, Initialisiert mit dem Wert 2
-	float64_t testvar2 = f_sd(3);
+
 	char s_result_chudnov[20];
 	char s_result_leibn[12];
-	
-	
-	
+	char s_result_euler[12];
+	float32_t lokal_leib_pi;
+	float64_t lokal_chod_pi;
 	
 	for(;;)
 	{
+		
+		
+		//alle 500 ms Logik
+		xEventGroupSetBits(egPI_Calc, DATA_READ_REQUEST_LOCK);
+		xEventGroupWaitBits(egPI_Calc, DATA_CALCULATION_READY, pdTRUE, pdFALSE, portMAX_DELAY); 
+		//lokale Variable??? mit Gobaler überschreiben??
+		lokal_chod_pi =  f_Chudnov_PI; 
+		lokal_leib_pi = Leib_PI;
+		xEventGroupSetBits(egPI_Calc, DATA_READ_LOCK_CLEARED);  //berechnung wieder freigeben --> globale variable
+		xEventGroupClearBits(egPI_Calc, DATA_READ_REQUEST_LOCK);
+		
+		
+		
 		vDisplayClear();
 		
-		
 
-		//sprintf(&pistring[0], "PI: %.8f", M_PI);
-		sprintf(&s_result_leibn[0], "PI: %.8f", pi);
+		sprintf(&s_result_leibn[0], "PI: %.8f", lokal_leib_pi);
 		vDisplayWriteStringAtPos(1,0, "%s", s_result_leibn);
 		
 		//float 64
-		char* tempResultString = f_to_string(f_Chudnov_PI, 16, 16);		//Verwandeln einer Double-Variable in einen String
+		char* tempResultString = f_to_string(lokal_chod_pi, 16, 16);		//Verwandeln einer Double-Variable in einen String
 		sprintf(s_result_chudnov, "1: %s", tempResultString);			//Einsetzen des Strings in einen anderen String
 		vDisplayWriteStringAtPos(2,0,"%s", s_result_chudnov);;		vDisplayWriteStringAtPos(3,0,"2 as float: %f", f_ds(f_Chudnov_PI));
 		
 		
-		vTaskDelay(400 / portTICK_RATE_MS);
+		//euler test
+		
+		sprintf(&s_result_euler[0], "PI: %.8f", g_Euler_PI);
+		vDisplayWriteStringAtPos(0,0, "%s", s_result_euler);
+		
+		
+		vTaskDelay(400 / portTICK_RATE_MS); //SOLL ALLE 500MS 
 		
 		
 		
