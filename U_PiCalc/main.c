@@ -79,6 +79,7 @@ float32_t pi4 = 1;
 float32_t Leib_PI = 0;  
 float32_t g_Euler_PI = 0; 
 float64_t f_Chudnov_PI;
+float64_t g_f_Euler_PI;
 
 int main(void)
 {
@@ -123,6 +124,11 @@ void vEuler_PI(void* pvParameters)  {
 	float32_t  lokal_euler_pi;
 	float32_t  euler_pi_calc;
 	
+	
+	float64_t f_euler_pi_calc;
+	float64_t f_lokal_euler_pi; 
+	
+	
 	for(;;) 
 	{
 		euler_pi_calc = euler_pi_calc + ( 1.0 / pow(counter, 2) );
@@ -130,7 +136,17 @@ void vEuler_PI(void* pvParameters)  {
 		lokal_euler_pi = sqrt( (euler_pi_calc * 6.0 ) );
 		
 		g_Euler_PI = lokal_euler_pi; 
+		
+		
+		f_euler_pi_calc = f_add(f_euler_pi_calc, f_div( f_sd(1) , f_pow( f_sd(counter), f_sd(2) ) ));  //zu viel f_sd?
+		
+		//achtung wahrscheinlich f_squr nohc aktivieren oder mit f_pow lösen
+		f_lokal_euler_pi = f_sqrt( f_mult( f_euler_pi_calc, f_sd(6)));   //testen ob f_sd 6 oder nicht unterschie macht
+		g_f_Euler_PI = f_lokal_euler_pi; 
+		
 		counter++;
+		
+		
 		
 		
 		
@@ -211,6 +227,7 @@ void vLeibnizTask(void* pvParameters) {
 				lokal_leib_pi = 0; 
 			}
 			
+			
 			pi4 = pi4 - (1.0 / counter);  //1.0 damit als float erkannt int counter
 			counter += 2;
 			pi4 = pi4 + (1. / counter);
@@ -224,6 +241,10 @@ void vLeibnizTask(void* pvParameters) {
 				xEventGroupWaitBits(egPI_Calc, DATA_READ_LOCK_CLEARED, pdTRUE, pdFALSE, portTICK_RATE_MS);
 			}
 			Leib_PI = lokal_leib_pi;	
+			if (lokal_leib_pi == M_PI)   //foto für zeitmessung anschaue
+			{							//string vergleichen
+										//multiplzieren mit 10000 und danach int machen
+			}
 		}
 	}
 	
@@ -263,10 +284,11 @@ void Anzeige(void* pvParameters)
 		sprintf(&s_result_leibn[0], "PI: %.8f", lokal_leib_pi);
 		vDisplayWriteStringAtPos(1,0, "%s", s_result_leibn);
 		
-		//float 64
-		char* tempResultString = f_to_string(lokal_chod_pi, 16, 16);		//Verwandeln einer Double-Variable in einen String
-		sprintf(s_result_chudnov, "1: %s", tempResultString);			//Einsetzen des Strings in einen anderen String
-		vDisplayWriteStringAtPos(2,0,"%s", s_result_chudnov);;		vDisplayWriteStringAtPos(3,0,"2 as float: %f", f_ds(f_Chudnov_PI));
+		//float 64 chudo
+		//char* tempResultString = f_to_string(lokal_chod_pi, 16, 16);		//Verwandeln einer Double-Variable in einen String
+		//sprintf(s_result_chudnov, "1: %s", tempResultString);			//Einsetzen des Strings in einen anderen String
+		//vDisplayWriteStringAtPos(2,0,"%s", s_result_chudnov);	
+		//vDisplayWriteStringAtPos(3,0,"2 as float: %f", f_ds(f_Chudnov_PI));
 		
 		
 		//euler test
@@ -275,7 +297,18 @@ void Anzeige(void* pvParameters)
 		vDisplayWriteStringAtPos(0,0, "%s", s_result_euler);
 		
 		
-		vTaskDelay(400 / portTICK_RATE_MS); //SOLL ALLE 500MS 
+		//float 64 euler test
+		char* tempResultString = f_to_string(g_f_Euler_PI, 16, 16);		//Verwandeln einer Double-Variable in einen String
+		sprintf(s_result_chudnov, "1: %s", tempResultString);			//Einsetzen des Strings in einen anderen String
+		vDisplayWriteStringAtPos(2,0,"%s", s_result_chudnov);
+		vDisplayWriteStringAtPos(3,0,"2 as float: %f", f_ds(f_Chudnov_PI));
+		
+		
+		
+		
+		//delay until ausprobieren für 500ms takt
+		
+		vTaskDelay(500 / portTICK_RATE_MS); //SOLL ALLE 500MS 
 		
 		
 		
