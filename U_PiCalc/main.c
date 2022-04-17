@@ -41,10 +41,9 @@ void vEuler_PI(void* pvParameters);
 
 EventGroupHandle_t egPI_Calc;
 
-
 #define	TASK_CHUDNOVSKY				1 << 0	
 #define TASK_LEIBNITZ				1 << 1		
-#define TASK_EULER					1 << 2		 //https://3.141592653589793238462643383279502884197169399375105820974944592.eu/pi-berechnen-formeln-und-algorithmen/
+#define TASK_EULER					1 << 2		 
 	
 #define DATA_READ_REQUEST_LOCK		1 << 3
 #define DATA_CALCULATION_READY		1 << 4
@@ -58,14 +57,12 @@ EventGroupHandle_t egPI_Calc;
 #define BUTTON_SWITCH				1 << 10
 
 #define TASK_START_STOP				1 << 11
-
 #define TASK_TIME_FINISHED			1 << 12
 
 #define RESET_EG_BUTTONS			0x780 //Reset all Buttons
 
 
 //Switch
-
 #define STATE_STOP 0
 #define STATE_START 1
 
@@ -82,9 +79,9 @@ int main(void)
 	egPI_Calc = xEventGroupCreate();
 
 	
-	xTaskCreate( vControllerTask,	(const char *) "control_tsk",	configMINIMAL_STACK_SIZE+1000, NULL, 3, NULL);
-	xTaskCreate( vLeibnizTask,		(const char *) "leibniz_tsk",	configMINIMAL_STACK_SIZE+500, NULL, 1, NULL);
-	xTaskCreate( vEuler_PI,			(const char *) "Euler_PI_tsk",	configMINIMAL_STACK_SIZE+500, NULL, 1, NULL);
+	xTaskCreate( vControllerTask,	(const char *) "control_tsk",	configMINIMAL_STACK_SIZE+1000, NULL, 1, NULL);
+	xTaskCreate( vLeibnizTask,		(const char *) "leibniz_tsk",	configMINIMAL_STACK_SIZE+500, NULL, 3, NULL);
+	xTaskCreate( vEuler_PI,			(const char *) "Euler_PI_tsk",	configMINIMAL_STACK_SIZE+500, NULL, 3, NULL);
 	
 	vDisplayClear();
 	vDisplayWriteStringAtPos(0,0,"PI-Calc FS2022");
