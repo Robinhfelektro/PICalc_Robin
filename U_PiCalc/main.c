@@ -32,10 +32,15 @@
 #include "avr_f64.h"												//Library Include
 
 
+void vControllerTask(void* pvParameters);
+void vLeibnizTask(void* pvParameters);
+void vEuler_PI(void* pvParameters);
+
 
 //Switch
 #define STATE_STOP 0
-#define STATE_START 1
+#define STATE_START_MENUE 1
+#define STATE_START 2
 
 
 
@@ -43,6 +48,7 @@
 // Eventgroup and defines
 //////////////////////////////////////////////////////////////////////////
 EventGroupHandle_t egPI_Calc;
+
 #define	TASK_CHUDNOVSKY				1 << 0	
 #define TASK_LEIBNITZ				1 << 1		
 #define TASK_EULER					1 << 2		 
@@ -72,9 +78,7 @@ float32_t g_Euler_PI = 0;
 float64_t g_f_Euler_PI;				
 
 
-void vControllerTask(void* pvParameters);
-void vLeibnizTask(void* pvParameters);
-void vEuler_PI(void* pvParameters);
+
 
 //////////////////////////////////////////////////////////////////////////
 // Funktion für Fakultät Berechnung
@@ -100,9 +104,9 @@ int main(void)
 	
 	egPI_Calc = xEventGroupCreate();
 
-	xTaskCreate( vControllerTask,	(const char *) "control_tsk",	configMINIMAL_STACK_SIZE+1000, NULL, 1, NULL);
-	xTaskCreate( vLeibnizTask,		(const char *) "leibniz_tsk",	configMINIMAL_STACK_SIZE+500, NULL, 3, NULL);
-	xTaskCreate( vEuler_PI,			(const char *) "Euler_PI_tsk",	configMINIMAL_STACK_SIZE+500, NULL, 3, NULL);
+	xTaskCreate( vControllerTask,	(const char *) "control_tsk",	configMINIMAL_STACK_SIZE+1000, NULL, 3, NULL);
+	xTaskCreate( vLeibnizTask,		(const char *) "leibniz_tsk",	configMINIMAL_STACK_SIZE+1000, NULL, 1, NULL);
+	xTaskCreate( vEuler_PI,			(const char *) "Euler_PI_tsk",	configMINIMAL_STACK_SIZE+1000, NULL, 1, NULL);
 	
 	vDisplayClear();
 	vDisplayWriteStringAtPos(0,0,"PI-Calc FS2022");
@@ -142,7 +146,7 @@ void vEuler_PI(void* pvParameters)  {
 void vLeibnizTask(void* pvParameters) {
 	
 	uint32_t	counter = 3; 
-	float32_t	lokal_leib_pi;
+	float32_t	lokal_leib_pi = 0;
 	float32_t	pi4 = 1;
 	uint8_t		lokal_task_flag = 0; 
 	char pi_compare[8];						//Überprüfung 5 Kommastellen
@@ -157,9 +161,10 @@ void vLeibnizTask(void* pvParameters) {
 			{
 				xEventGroupClearBits(egPI_Calc, RESET_PI);
 				lokal_leib_pi = 0; 
-				pi4 = 0; 
+				pi4 = 1; 
 				counter = 3; 
 				lokal_task_flag = pdFALSE;
+				//Leib_PI = 0; 
 				
 			}
 			pi4 = pi4 - (1.0 / counter);  //lokale Pi Berechnung
@@ -210,7 +215,7 @@ void vControllerTask(void* pvParameters) {
 	char s_result_leibn[12];
 	char s_result_euler[12];
 	float32_t lokal_leib_pi;
-	uint8_t mode = STATE_STOP; 
+	uint8_t mode = STATE_START_MENUE; 
 	bool b_Time_meas_finished;
 	xEventGroupSetBits(egPI_Calc, TASK_LEIBNITZ);		//starts with leibnitz task
 	
@@ -234,7 +239,10 @@ void vControllerTask(void* pvParameters) {
 			{
 				xEventGroupSetBits(egPI_Calc, RESET_PI);
 				xEventGroupClearBits(egPI_Calc, TASK_TIME_FINISHED);
+				xTaskTimeStart = xTaskGetTickCount(); 
 				b_Time_meas_finished = pdFALSE; 
+				lokal_time_meas = 0; 
+				
 			}
 			if ((xEventGroupGetBits(egPI_Calc) & BUTTON_SWITCH) == BUTTON_SWITCH)
 			{
@@ -247,12 +255,22 @@ void vControllerTask(void* pvParameters) {
 			
 			switch (mode)			//Switch für Start und Stop Modus
 			{
-				case STATE_STOP: 
+				case STATE_START_MENUE:
 				
 					vDisplayClear();
 					vDisplayWriteStringAtPos(0,0,"Mode:Stop, PI: ---");
 					vDisplayWriteStringAtPos(1,0,"Press Start to");
 					vDisplayWriteStringAtPos(2,0,"begin calculation");
+					vDisplayWriteStringAtPos(3,0,"Start-Stop-Res-Swit");
+				
+				break; 
+				case STATE_STOP: 
+				
+					vDisplayClear();
+					vDisplayWriteStringAtPos(0,0,"Mode:Stop,  PI: Leib");
+					sprintf(&s_result_leibn[0], "PI: %.8f", lokal_leib_pi);
+					vDisplayWriteStringAtPos(1,0, "%s", s_result_leibn);
+					vDisplayWriteStringAtPos(2,0,"time s: %d", lokal_time_meas / 1000);
 					vDisplayWriteStringAtPos(3,0,"Start-Stop-Res-Swit");
 					
 				break;	
