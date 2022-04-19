@@ -318,8 +318,6 @@ void vControllerTask(void* pvParameters) {
 		{
 			counter_500ms--; 
 		}
-		
-		
 		if(getButtonPress(BUTTON1) == SHORT_PRESSED) {
 			xEventGroupSetBits(egPI_Calc, BUTTON_START);
 		}
@@ -347,6 +345,18 @@ void vControllerTask(void* pvParameters) {
 		if(getButtonPress(BUTTON4) == LONG_PRESSED) {
 			
 		}
+		//////////////////////////////////////////////////////////////////////////
+		// Euler 32 und 64 Bit Testcode
+		//////////////////////////////////////////////////////////////////////////
+		//euler test
+		//sprintf(&s_result_euler[0], "PI: %.8f", g_Euler_PI);
+		//vDisplayWriteStringAtPos(2,0, "%s", s_result_euler);
+		//
+		////float 64 euler test
+		//char* tempResultString = f_to_string(g_f_Euler_PI, 16, 16);		//Verwandeln einer Double-Variable in einen String
+		//sprintf(s_result_chudnov, "1: %s", tempResultString);			    //Einsetzen des Strings in einen anderen String
+		//vDisplayWriteStringAtPos(2,0,"%s", s_result_chudnov);
+
 		vTaskDelay(10/portTICK_RATE_MS);  
 	}
 }
