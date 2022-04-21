@@ -125,8 +125,6 @@ void vEuler_PI(void* pvParameters)  {
 
 	float64_t f_euler_pi_calc;
 	float64_t f_lokal_euler_pi; 
-	
-	
 	for(;;) 
 	{
 		euler_pi_calc = euler_pi_calc + ( 1.0 / pow(counter, 2) );			//float 32Bit
@@ -135,7 +133,7 @@ void vEuler_PI(void* pvParameters)  {
 
 		f_euler_pi_calc = f_add(f_euler_pi_calc, f_div( f_sd(1) , f_pow( f_sd(counter), f_sd(2) ) ));  //float 64Bit
 		f_lokal_euler_pi = f_pow( f_mult( f_euler_pi_calc, f_sd(6)) , f_sd(0.5));  
-		
+		g_f_Euler_PI = f_lokal_euler_pi;
 		counter++;
 	}
 }
@@ -156,7 +154,6 @@ void vLeibnizTask(void* pvParameters) {
 	{
 		if ( (xEventGroupGetBits(egPI_Calc) & (TASK_LEIBNITZ | TASK_START_STOP) ) == (TASK_LEIBNITZ | TASK_START_STOP))  //task enable
 		{
-			
 			if ( (xEventGroupGetBits(egPI_Calc) & RESET_PI ) == RESET_PI)			//reset
 			{
 				xEventGroupClearBits(egPI_Calc, RESET_PI);
@@ -164,8 +161,6 @@ void vLeibnizTask(void* pvParameters) {
 				pi4 = 1; 
 				counter = 3; 
 				lokal_task_flag = pdFALSE;
-				//Leib_PI = 0; 
-				
 			}
 			pi4 = pi4 - (1.0 / counter);  //lokale Pi Berechnung
 			counter += 2;
@@ -309,10 +304,22 @@ void vControllerTask(void* pvParameters) {
 						}
 					}
 				break; 
-				
 			}
+			
 			xEventGroupClearBits(egPI_Calc, RESET_EG_BUTTONS);  //rest buttons flags
 			counter_500ms = 50; 
+			
+			//////////////////////////////////////////////////////////////////////////
+			// Euler 32 und 64 Bit Testcode
+			//////////////////////////////////////////////////////////////////////////
+			//euler test
+			//sprintf(&s_result_euler[0], "PI: %.8f", g_Euler_PI);
+			//vDisplayWriteStringAtPos(2,0, "%s", s_result_euler);
+			//
+			////float 64 euler test
+			//char* tempResultString = f_to_string(g_f_Euler_PI, 16, 16);		//Verwandeln einer Double-Variable in einen String
+			//sprintf(s_result_chudnov, "1: %s", tempResultString);			    //Einsetzen des Strings in einen anderen String
+			//vDisplayWriteStringAtPos(3,0,"%s", s_result_chudnov);
 		}
 		else
 		{
@@ -345,18 +352,6 @@ void vControllerTask(void* pvParameters) {
 		if(getButtonPress(BUTTON4) == LONG_PRESSED) {
 			
 		}
-		//////////////////////////////////////////////////////////////////////////
-		// Euler 32 und 64 Bit Testcode
-		//////////////////////////////////////////////////////////////////////////
-		//euler test
-		//sprintf(&s_result_euler[0], "PI: %.8f", g_Euler_PI);
-		//vDisplayWriteStringAtPos(2,0, "%s", s_result_euler);
-		//
-		////float 64 euler test
-		//char* tempResultString = f_to_string(g_f_Euler_PI, 16, 16);		//Verwandeln einer Double-Variable in einen String
-		//sprintf(s_result_chudnov, "1: %s", tempResultString);			    //Einsetzen des Strings in einen anderen String
-		//vDisplayWriteStringAtPos(2,0,"%s", s_result_chudnov);
-
 		vTaskDelay(10/portTICK_RATE_MS);  
 	}
 }
